@@ -22,27 +22,25 @@
       <button class="nav-item active" data-view="chat"><span>◉</span> Assistant</button>
       <button class="nav-item" data-view="reminders"><span>◷</span> My reminders <b id="reminderCount">0</b></button>
       <div class="sidebar-bottom">
-        <div class="privacy-note"><span class="privacy-dot"></span><div><strong>Your privacy matters</strong><small>Chat stays in this browser</small></div></div>
+        <div class="privacy-note"><span class="privacy-dot"></span><div><strong>Your privacy matters</strong><small id="privacyStatus">Saved in this browser</small></div></div>
         <button id="clearDataBtn" class="text-button">Clear my local data</button>
         <div class="profile"><div class="profile-avatar">Z</div><div><strong>Zythar AI</strong><small>Ready when you are</small></div><span class="online-dot"></span></div>
       </div>
     </aside>
-
     <main class="main" id="home">
       <header class="topbar">
         <button class="mobile-brand" id="menuBtn" aria-label="Toggle navigation">☰ <strong>Zythar</strong></button>
         <div class="page-title"><span class="green-dot"></span><span id="pageTitle">Your assistant</span></div>
         <div class="top-actions">
           <label class="language-picker" for="languageSelect"><span>文</span><select id="languageSelect" aria-label="Voice language"><option value="en-US">English</option><option value="ur-PK">اردو</option><option value="hi-IN">हिन्दी</option></select></label>
+          <button class="auth-button" id="authButton">Sign in</button>
           <button class="icon-button" id="installBtn" hidden title="Install Zythar">⇩</button>
           <button class="icon-button" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">☼</button>
         </div>
       </header>
-
       <section class="workspace" id="chatView">
         <div class="welcome" id="welcome">
-          <div class="sparkle">✳</div>
-          <p class="kicker">A LITTLE HELP, A LOT OF HEART</p>
+          <div class="sparkle">✳</div><p class="kicker">A LITTLE HELP, A LOT OF HEART</p>
           <h1>What’s on your<br><span>mind today?</span></h1>
           <p class="welcome-copy">Talk it out, look it up, or just tell me how you’re feeling.<br>I’m here to help you take the next step.</p>
           <div class="suggestions">
@@ -52,26 +50,24 @@
             <button class="suggestion" data-command="Remind me to drink water"><span class="suggestion-icon blue">◷</span><span><strong>Save a reminder</strong><small>Keep a note for later</small></span><span class="arrow">↗</span></button>
           </div>
         </div>
-
         <div class="chat-log" id="chatLog" aria-live="polite" aria-label="Conversation"></div>
-        <div class="composer-wrap">
-          <div class="composer" id="composer">
-            <textarea id="commandInput" rows="1" placeholder="Ask anything, or tell me what’s on your mind…" aria-label="Message Zythar"></textarea>
-            <div class="composer-tools"><span class="composer-hint"><kbd>↵</kbd> to send</span><div class="composer-actions"><button class="mic-button" id="micButton" aria-label="Start voice input" title="Speak to Zythar">♩</button><button class="send-button" id="sendButton" aria-label="Send message">↑</button></div></div>
-          </div>
-          <p class="disclaimer">Zythar can make mistakes. Check important information with trusted sources.</p>
-        </div>
+        <div class="composer-wrap"><div class="composer" id="composer">
+          <textarea id="commandInput" rows="1" placeholder="Ask anything, or tell me what’s on your mind…" aria-label="Message Zythar"></textarea>
+          <div class="composer-tools"><span class="composer-hint"><kbd>↵</kbd> to send</span><div class="composer-actions"><button class="mic-button" id="micButton" aria-label="Start voice input" title="Speak to Zythar">♩</button><button class="send-button" id="sendButton" aria-label="Send message">↑</button></div></div>
+        </div><p class="disclaimer">Zythar can make mistakes. Check important information with trusted sources.</p></div>
       </section>
-
       <section class="workspace reminders-view" id="remindersView" hidden>
-        <div class="reminders-heading"><p class="kicker">YOUR SPACE</p><h1>A little note<br><span>for later.</span></h1><p class="welcome-copy">Reminders are saved only in this browser on this device.</p></div>
+        <div class="reminders-heading"><p class="kicker">YOUR SPACE</p><h1>A little note<br><span>for later.</span></h1><p class="welcome-copy">Reminders are saved in this browser. Sign in with configured cloud sync to access them across devices.</p></div>
         <div class="reminder-list" id="reminderList"></div>
         <form class="reminder-form" id="reminderForm"><input id="reminderInput" maxlength="180" placeholder="Add a reminder…" aria-label="New reminder"><button type="submit">Add reminder <span>＋</span></button></form>
       </section>
-      <footer class="footer"><span>Made for your everyday moments <span class="heart">♥</span></span><span id="connectionStatus">Voice available in supported browsers</span></footer>
+      <footer class="footer"><span>Made for your everyday moments <span class="heart">♥</span></span><span id="connectionStatus">AI chat needs deployment configuration</span></footer>
     </main>
   </div>
+  <div class="modal-backdrop" id="authModal" hidden><section class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle"><button class="modal-close" id="closeAuth" aria-label="Close">×</button><p class="kicker">YOUR PRIVATE SPACE</p><h2 id="authTitle">Sign in to Zythar</h2><p class="auth-copy">Create an account to sync your chat and reminders across devices. Requires Supabase setup by the site owner.</p><form id="authForm"><label>Email<input id="authEmail" type="email" autocomplete="email" required maxlength="254" placeholder="you@example.com"></label><label>Password<input id="authPassword" type="password" autocomplete="current-password" required minlength="8" maxlength="128" placeholder="At least 8 characters"></label><button class="auth-submit" id="authSubmit" type="submit">Sign in</button></form><button class="auth-switch" id="authSwitch" type="button">New here? Create an account</button></section></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app-config.js"></script>
   <script src="script.js" defer></script>
 </body>
 </html>
