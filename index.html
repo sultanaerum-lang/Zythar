@@ -53,7 +53,7 @@
         <div class="chat-log" id="chatLog" aria-live="polite" aria-label="Conversation"></div>
         <div class="composer-wrap"><div class="composer" id="composer">
           <textarea id="commandInput" rows="1" placeholder="Ask anything, or tell me what’s on your mind…" aria-label="Message Zythar"></textarea>
-          <div class="composer-tools"><span class="composer-hint"><kbd>↵</kbd> to send</span><div class="composer-actions"><button class="mic-button" id="micButton" aria-label="Start voice input" title="Speak to Zythar">♩</button><button class="send-button" id="sendButton" aria-label="Send message">↑</button></div></div>
+          <div class="composer-tools"><span class="composer-hint"><kbd>↵</kbd> to send</span><div class="composer-actions"><button class="mic-button" id="micButton" aria-label="Start voice input" aria-pressed="false" title="Speak to Zythar">♩</button><button class="send-button" id="sendButton" aria-label="Send message">↑</button></div></div>
         </div><p class="disclaimer">Zythar can make mistakes. Check important information with trusted sources.</p></div>
       </section>
       <section class="workspace reminders-view" id="remindersView" hidden>
@@ -68,6 +68,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app-config.js"></script>
+  <script src="voice-fix.js"></script>
   <script src="script.js" defer></script>
 </body>
 </html>

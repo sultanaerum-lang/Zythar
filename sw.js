@@ -1,5 +1,5 @@
-const CACHE_NAME = 'zythar-shell-v2';
-const SHELL = ['./', './index.html', './styles.css', './script.js', './manifest.webmanifest', './icon.svg', './app-config.js'];
+const CACHE_NAME = 'zythar-shell-v3';
+const SHELL = ['./', './index.html', './styles.css', './script.js', './voice-fix.js', './manifest.webmanifest', './icon.svg', './app-config.js'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting())));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', event => {
