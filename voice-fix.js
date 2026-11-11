@@ -28,15 +28,14 @@
       micButton.setAttribute('aria-pressed', String(active));
       micButton.setAttribute('aria-label', active ? 'Stop voice input' : 'Start voice input');
       micButton.title = active ? 'Listening… tap to stop' : 'Speak to Zythar';
-      if (active) {
-        const status = document.querySelector('#connectionStatus');
-        if (status) status.textContent = 'Listening… speak now';
-      }
+      const status = document.querySelector('#connectionStatus');
+      if (status) status.textContent = active ? 'Listening… speak now' : 'Tap the microphone and speak';
     };
 
-    // Capture before the app's fallback handler to ensure only one recognizer runs.
     document.addEventListener('click', (event) => {
-      if (event.target !== micButton && !micButton.contains(event.target)) return;
+      const target = event.target;
+      if (target !== micButton && !micButton.contains(target)) return;
+
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
@@ -45,6 +44,7 @@
         notify('Voice input is not supported in this browser. Try a current version of Chrome or Edge, or type your message.');
         return;
       }
+
       if (listening && recognition) {
         recognition.stop();
         return;
@@ -71,6 +71,7 @@
           notify(messages[errorEvent.error] || 'Voice input stopped. You can type your message instead.');
         }
       };
+
       recognition.onresult = (resultEvent) => {
         let interim = '';
         for (let i = resultEvent.resultIndex; i < resultEvent.results.length; i += 1) {
@@ -96,6 +97,7 @@
           sendButton.click();
         }
       };
+
       recognition.onend = () => {
         setListeningState(false);
         recognition = null;
