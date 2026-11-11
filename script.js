@@ -1,327 +1,101 @@
-const siteMap = {
-  youtube: 'https://www.youtube.com/',
-  google: 'https://www.google.com/',
-  gmail: 'https://mail.google.com/',
-  github: 'https://github.com/',
-  wikipedia: 'https://www.wikipedia.org/',
-  whatsapp: 'https://web.whatsapp.com/',
-  instagram: 'https://www.instagram.com/',
-  facebook: 'https://www.facebook.com/',
-  twitter: 'https://x.com/',
-  linkedin: 'https://www.linkedin.com/',
-  maps: 'https://www.google.com/maps',
-  bing: 'https://www.bing.com/',
-  duckduckgo: 'https://duckduckgo.com/'
-};
+const $ = (selector) => document.querySelector(selector);
+const chatLog = $('#chatLog');
+const input = $('#commandInput');
+const welcome = $('#welcome');
+const toast = $('#toast');
+const langSelect = $('#languageSelect');
+const STORAGE = { chat: 'zythar-chat-v2', reminders: 'zythar-reminders-v2', language: 'zythar-language', theme: 'zythar-theme' };
+const sites = { youtube: 'https://youtube.com', google: 'https://google.com', gmail: 'https://mail.google.com', github: 'https://github.com', wikipedia: 'https://wikipedia.org', whatsapp: 'https://web.whatsapp.com', instagram: 'https://instagram.com', facebook: 'https://facebook.com', x: 'https://x.com', twitter: 'https://x.com', linkedin: 'https://linkedin.com', maps: 'https://maps.google.com', spotify: 'https://open.spotify.com', netflix: 'https://netflix.com', reddit: 'https://reddit.com', amazon: 'https://amazon.com' };
+let recognition;
+let listening = false;
+let deferredInstall;
+let toastTimer;
+let conversation = readStore(STORAGE.chat, []);
+let reminders = readStore(STORAGE.reminders, []);
 
-const chatLog = document.getElementById('chatLog');
-const commandInput = document.getElementById('commandInput');
-const runCommandBtn = document.getElementById('runCommandBtn');
-const micButton = document.getElementById('micButton');
-const statusPill = document.getElementById('statusPill');
-const speakBtn = document.getElementById('speakBtn');
-const researchBox = document.getElementById('researchBox');
-
-let recognition = null;
-let recognitionActive = false;
-let lastSpokenText = '';
-
-function addMessage(text, role = 'bot') {
-  const message = document.createElement('div');
-  message.className = `message ${role === 'user' ? 'user-message' : 'bot-message'}`;
-
-  const label = document.createElement('span');
-  label.className = 'role';
-  label.textContent = role === 'user' ? 'You' : 'Zythar';
-
-  const para = document.createElement('p');
-  para.textContent = text;
-
-  message.appendChild(label);
-  message.appendChild(para);
-  chatLog.appendChild(message);
-  chatLog.scrollTop = chatLog.scrollHeight;
+function readStore(key, fallback) { try { const value = JSON.parse(localStorage.getItem(key)); return Array.isArray(value) ? value : fallback; } catch { return fallback; } }
+function saveChat() { localStorage.setItem(STORAGE.chat, JSON.stringify(conversation.slice(-50))); }
+function showToast(message) { toast.textContent = message; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 2600); }
+function safeLink(url) { try { const parsed = new URL(url); return ['https:', 'http:'].includes(parsed.protocol) ? parsed.href : null; } catch { return null; } }
+function linkButton(container, label, href) { const safe = safeLink(href); if (!safe) return; const a = document.createElement('a'); a.className = 'result-link'; a.href = safe; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = label; container.append(a); }
+function addMessage(text, role = 'assistant', options = {}) {
+  const row = document.createElement('article'); row.className = `message ${role === 'user' ? 'user' : ''}`;
+  if (role !== 'user') { const avatar = document.createElement('span'); avatar.className = 'message-avatar'; avatar.textContent = 'z'; row.append(avatar); }
+  const body = document.createElement('div'); body.className = 'message-body'; body.textContent = text; row.append(body);
+  if (options.links?.length) { const links = document.createElement('div'); links.className = 'message-actions'; options.links.forEach(({ label, href }) => linkButton(links, label, href)); body.append(links); }
+  if (options.source) { const source = document.createElement('div'); source.className = 'source'; source.textContent = 'Source: '; const a = document.createElement('a'); a.href = safeLink(options.source) || '#'; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = options.sourceLabel || 'Read more'; source.append(a); body.append(source); }
+  chatLog.append(row); chatLog.scrollTop = chatLog.scrollHeight; return row;
 }
-
-function setStatus(text, listening = false) {
-  statusPill.innerHTML = `<span class="pulse" style="background:${listening ? '#ff7d7d' : '#7ef2af'}"></span>${text}`;
+function renderConversation() { chatLog.replaceChildren(); conversation.forEach(item => addMessage(item.text, item.role, item.options || {})); updateChatView(); }
+function updateChatView() { const hasMessages = conversation.length > 0; welcome.hidden = hasMessages; chatLog.classList.toggle('visible', hasMessages); }
+function respond(text, options = {}) { conversation.push({ role: 'assistant', text, options }); addMessage(text, 'assistant', options); saveChat(); speak(text); }
+function speak(text) { if (!('speechSynthesis' in window)) return; const utterance = new SpeechSynthesisUtterance(text); utterance.lang = langSelect.value; utterance.rate = 1; speechSynthesis.cancel(); speechSynthesis.speak(utterance); }
+function addUser(text) { conversation.push({ role: 'user', text }); addMessage(text, 'user'); saveChat(); updateChatView(); }
+function openSearch(query) { const q = encodeURIComponent(query); respond(`I’ve prepared web search results for “${query}”. Choose a search engine to continue.`, { links: [{ label: 'Google search ↗', href: `https://www.google.com/search?q=${q}` }, { label: 'DuckDuckGo ↗', href: `https://duckduckgo.com/?q=${q}` }] }); }
+function openSite(target) {
+  const normalized = target.toLowerCase().replace(/\b(please|now|for me|website|app|site)\b/g, '').trim();
+  const known = Object.keys(sites).find(name => normalized.includes(name));
+  if (known) { respond(`Here’s ${known[0].toUpperCase() + known.slice(1)}. Tap to open it.`, { links: [{ label: `Open ${known} ↗`, href: sites[known] }] }); return; }
+  const urlCandidate = target.match(/https?:\/\/[^\s]+/i)?.[0];
+  if (urlCandidate && safeLink(urlCandidate)) { respond('Tap below to open that website.', { links: [{ label: 'Open website ↗', href: urlCandidate }] }); return; }
+  respond(`I don’t have a shortcut for “${target}”. Search for it and choose a result.`, { links: [{ label: `Search ${target} ↗`, href: `https://www.google.com/search?q=${encodeURIComponent(target)}` }] });
 }
-
-function speakText(text) {
-  if (!text) return;
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 1;
-  utterance.pitch = 1;
-  utterance.lang = 'en-US';
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
-  lastSpokenText = text;
-}
-
-function openWebsite(name) {
-  const cleaned = name.toLowerCase().trim();
-  const url = siteMap[cleaned] || null;
-
-  if (url) {
-    window.open(url, '_blank', 'noopener');
-    return `Opening ${cleaned}.`;
-  }
-
-  if (/^https?:\/\//i.test(name)) {
-    window.open(name, '_blank', 'noopener');
-    return `Opening ${name}.`;
-  }
-
-  const searchQuery = encodeURIComponent(name);
-  window.open(`https://www.google.com/search?q=${searchQuery}`, '_blank', 'noopener');
-  return `Searching the web for ${name}.`;
-}
-
-function searchWeb(query) {
-  const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-  window.open(url, '_blank', 'noopener');
-  return `I opened a search for: ${query}`;
-}
-
-function createMessageLink(text) {
-  const encoded = encodeURIComponent(text);
-  const url = `https://wa.me/?text=${encoded}`;
-  window.open(url, '_blank', 'noopener');
-  return 'I drafted a WhatsApp message. Please review and send it.';
-}
-
-async function fetchResearchSummary(topic) {
-  const fallback = `I found a summary for “${topic}”. Start with trusted sources like Wikipedia, official docs, and recent news. If you want, I can also explain it in simpler Urdu or English.`;
-
+async function research(topic) {
+  respond(`I’m looking up “${topic}”…`);
+  const index = conversation.length - 1;
   try {
-    const wikiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`;
-    const response = await fetch(wikiUrl);
-
-    if (!response.ok) {
-      throw new Error('Wikipedia fetch failed');
-    }
-
+    const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`, { headers: { Accept: 'application/json' } });
+    if (!response.ok) throw new Error('No matching encyclopedia summary');
     const data = await response.json();
-    const summary = data.extract || fallback;
-    const display = summary.length > 300 ? `${summary.slice(0, 300)}...` : summary;
-    researchBox.innerHTML = `<strong>${topic}</strong><br>${display}<br><br><a href="${data.content_urls?.desktop?.page || 'https://en.wikipedia.org/'}" target="_blank" rel="noreferrer">Read more on Wikipedia</a>`;
-    return `I researched ${topic}. ${display}`;
-  } catch (error) {
-    const ddgUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(topic)}&format=json&no_redirect=1&no_html=1`;
-
-    try {
-      const ddgResponse = await fetch(ddgUrl);
-      const ddgData = await ddgResponse.json();
-      const subject = ddgData.AbstractText || ddgData.RelatedTopics?.[0]?.Text || fallback;
-      const brief = subject.length > 300 ? `${subject.slice(0, 300)}...` : subject;
-      researchBox.innerHTML = `<strong>${topic}</strong><br>${brief}<br><br><a href="https://duckduckgo.com/?q=${encodeURIComponent(topic)}" target="_blank" rel="noreferrer">Open search results</a>`;
-      return `I researched ${topic}. ${brief}`;
-    } catch (ddgError) {
-      researchBox.innerHTML = `<strong>${topic}</strong><br>${fallback}<br><br><a href="https://duckduckgo.com/?q=${encodeURIComponent(topic)}" target="_blank" rel="noreferrer">Open search results</a>`;
-      return `I could not fetch a live summary for ${topic}, but here is the best next step: search trusted sources and review recent updates.`;
-    }
+    const summary = data.extract || `I couldn’t find an encyclopedia summary for ${topic}. Try broadening the topic or open a web search.`;
+    const options = { source: data.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${encodeURIComponent(topic.replaceAll(' ', '_'))}`, sourceLabel: 'Wikipedia article', links: [{ label: `More results for ${topic} ↗`, href: `https://www.google.com/search?q=${encodeURIComponent(topic)}` }] };
+    conversation[index] = { role: 'assistant', text: summary, options }; saveChat(); renderConversation(); speak(summary.slice(0, 450));
+  } catch {
+    conversation[index] = { role: 'assistant', text: `I couldn’t fetch a live summary right now. You can still explore current results for “${topic}”.`, options: { links: [{ label: `Search ${topic} ↗`, href: `https://www.google.com/search?q=${encodeURIComponent(topic)}` }, { label: 'Search DuckDuckGo ↗', href: `https://duckduckgo.com/?q=${encodeURIComponent(topic)}` }] } }; saveChat(); renderConversation();
   }
 }
-
-async function handleCommand(command) {
-  const text = command.trim();
-  if (!text) return;
-
-  addMessage(text, 'user');
-
+function addReminder(text) { const reminder = { id: crypto.randomUUID?.() || String(Date.now()), text, created: new Date().toISOString() }; reminders.unshift(reminder); localStorage.setItem(STORAGE.reminders, JSON.stringify(reminders)); renderReminders(); return reminder; }
+function handleReminder(text) { const content = text.replace(/^(please\s+)?(remind me to|remind me|set a reminder to|add a reminder|remember to|reminder)\s*/i, '').trim(); if (!content) { respond('What would you like me to remind you about?'); return; } addReminder(content); respond(`Saved “${content}” in your reminders on this device. I can’t trigger a notification while this website is closed.`); }
+function shareMessage(text) { const content = text.replace(/^(please\s+)?(draft|write|prepare|send|message|msg|whatsapp)(\s+(a\s+)?(message|msg))?\s*/i, '').trim(); if (!content) { respond('Tell me what you would like the message to say, and I’ll prepare a draft.'); return; } const link = `https://wa.me/?text=${encodeURIComponent(content)}`; respond(`Your WhatsApp message is ready to review. Zythar won’t send it for you—check the recipient and message in WhatsApp before you tap Send.`, { links: [{ label: 'Review WhatsApp draft ↗', href: link }] }); }
+function supportiveReply(text) {
   const lower = text.toLowerCase();
-
-  if (/(hello|hi|hey|salam|assalam|namaste)/i.test(lower)) {
-    const reply = 'Hello! I am Zythar AI. I can help with voice search, websites, research, messages, and emotional support.';
-    addMessage(reply, 'bot');
-    speakText(reply);
-    return;
-  }
-
-  if (/(how are you|kese ho|aap kaise ho|tum theek ho)/i.test(lower)) {
-    const reply = 'I am doing well and ready to help you. What can I do for you today?';
-    addMessage(reply, 'bot');
-    speakText(reply);
-    return;
-  }
-
-  if (/(open|launch|khol|kholo|start)/i.test(lower)) {
-    const match = text.match(/(?:open|launch|khol|kholo|start)\s+(.*)/i);
-    const target = match ? match[1].trim() : '';
-
-    if (!target) {
-      const reply = 'Please tell me which website or app you want to open.';
-      addMessage(reply, 'bot');
-      speakText(reply);
-      return;
-    }
-
-    const reply = openWebsite(target);
-    addMessage(reply, 'bot');
-    speakText(reply);
-    return;
-  }
-
-  if (/(search|google|duckduckgo|find|talash|search karo|dhundho)/i.test(lower)) {
-    const match = text.match(/(?:search|google|duckduckgo|find|talash|search karo|dhundho)\s+(.*)/i);
-    const query = match ? match[1].trim() : text.replace(/(?:search|google|duckduckgo|find|talash|search karo|dhundho)/i, '').trim();
-
-    if (!query) {
-      const reply = 'What would you like me to search for?';
-      addMessage(reply, 'bot');
-      speakText(reply);
-      return;
-    }
-
-    const reply = searchWeb(query);
-    addMessage(reply, 'bot');
-    speakText(reply);
-    return;
-  }
-
-  if (/(research|study|research karo|study karo|investigate|explore)/i.test(lower)) {
-    const match = text.match(/(?:research|study|research karo|study karo|investigate|explore)\s+(.*)/i);
-    const topic = match ? match[1].trim() : text.replace(/(?:research|study|research karo|study karo|investigate|explore)/i, '').trim();
-
-    if (!topic) {
-      const reply = 'Please tell me which topic to research.';
-      addMessage(reply, 'bot');
-      speakText(reply);
-      return;
-    }
-
-    const reply = await fetchResearchSummary(topic);
-    addMessage(reply, 'bot');
-    speakText(reply);
-    return;
-  }
-
-  if (/(message|msg|send message|whatsapp|sms|text|message bhejo|msg bhejo|sms bhejo)/i.test(lower)) {
-    const match = text.match(/(?:message|msg|send message|whatsapp|sms|text|message bhejo|msg bhejo|sms bhejo)\s+(.*)/i);
-    const content = match ? match[1].trim() : text.replace(/(?:message|msg|send message|whatsapp|sms|text|message bhejo|msg bhejo|sms bhejo)/i, '').trim();
-
-    if (!content) {
-      const reply = 'What message should I prepare?';
-      addMessage(reply, 'bot');
-      speakText(reply);
-      return;
-    }
-
-    const reply = createMessageLink(content);
-    addMessage(reply, 'bot');
-    speakText(reply);
-    return;
-  }
-
-  if (/(feel|feeling|emotion|stress|anxious|sad|happy|depressed|frustrated|i feel|main feel|main mehsoos karta hoon)/i.test(lower)) {
-    const reply = 'Thank you for sharing that. It is okay to feel this way. Try to breathe slowly for 10 seconds, note one thing you can control, and if it feels overwhelming, talk to someone you trust or a mental health professional.';
-    addMessage(reply, 'bot');
-    speakText(reply);
-    return;
-  }
-
-  if (/(reminder|note|remember|yaad|note kar|remind me|remember me)/i.test(lower)) {
-    const reply = 'Reminder saved in your browser. You can revisit it later from the local notes or your app memory.';
-    const stored = JSON.parse(localStorage.getItem('zytharReminders') || '[]');
-    stored.push(text);
-    localStorage.setItem('zytharReminders', JSON.stringify(stored));
-    addMessage(reply, 'bot');
-    speakText(reply);
-    return;
-  }
-
-  if (/(what can you do|help|aap kya kar sakte ho|madad|assistance)/i.test(lower)) {
-    const reply = 'I can open websites, search the web, research topics, draft WhatsApp messages, help with emotional support, reminders, and daily productivity guidance.';
-    addMessage(reply, 'bot');
-    speakText(reply);
-    return;
-  }
-
-  const reply = `I understand your request: “${text}”. I can help with a command like “Open YouTube”, “Search AI trends”, “Research climate change”, or “Send message hello team”.`;
-  addMessage(reply, 'bot');
-  speakText(reply);
+  if (/suicid|kill myself|end my life|hurt myself|self harm|want to die/.test(lower)) return 'I’m really sorry you’re carrying this. You deserve immediate support from a real person. If you may be in immediate danger, call your local emergency number now or go to the nearest emergency department. If you can, tell someone you trust and stay with them. I’m an AI and can’t provide crisis care.';
+  if (/anxious|anxiety|panic|overwhelm|stress|stressed|worried/.test(lower)) return 'That sounds like a lot to hold. If it feels okay, pause and take one slow breath out, then name one small thing you can do next. Would you like to tell me what’s weighing on you? I can listen, though I’m not a mental-health professional.';
+  if (/sad|lonely|upset|hurt|angry|frustrat|feeling|feel /.test(lower)) return 'Thank you for sharing that with me. Your feelings matter, and you don’t have to solve everything at once. Would you like to say more about what happened, or think together about one small next step?';
+  return null;
 }
-
-async function runCommandFromInput() {
-  const text = commandInput.value.trim();
-  if (!text) return;
-  commandInput.value = '';
-  await handleCommand(text);
+function parseCommand(raw) {
+  const text = raw.trim(); const lower = text.toLowerCase();
+  if (/^(open|launch|khol|kholo|start)\b/i.test(text)) { openSite(text.replace(/^(open|launch|khol|kholo|start)\s*/i, '')); return; }
+  if (/^(search|google|find|look up|talash|dhundo|search karo)\b/i.test(text)) { const query = text.replace(/^(search( for)?|google( for)?|find|look up|talash|dhundo|search karo)\s*/i, '').trim(); query ? openSearch(query) : respond('What would you like me to search for?'); return; }
+  if (/^(research|study|explore|research karo|study karo)\b/i.test(text)) { const topic = text.replace(/^(research|study|explore|research karo|study karo)\s*/i, '').trim(); topic ? research(topic) : respond('What topic should I look into?'); return; }
+  if (/^(remind me|set a reminder|add a reminder|remember to|reminder)\b/i.test(text)) { handleReminder(text); return; }
+  if (/^(draft|write|prepare|send|message|msg|whatsapp)\b/i.test(text)) { shareMessage(text); return; }
+  const emotional = supportiveReply(text); if (emotional) { respond(emotional); return; }
+  if (/^(hi|hello|hey|salam|assalam|assalamu|namaste)\b/i.test(lower)) { respond('Wa alaikum assalam! I’m here to help. You can ask me to search, research a topic, open a website, save a reminder, or just talk.'); return; }
+  if (/what can you do|help me|help|kya kar|madad/i.test(lower)) { respond('I can help you search the web, find a brief topic summary, open popular websites, draft a WhatsApp message for you to review, save local reminders, or listen when you want to share how you feel. Try “Research healthy sleep” or “Open YouTube”.'); return; }
+  if (/how are you|kaise ho|kese ho/i.test(lower)) { respond('I’m here and ready to help. How are you doing?'); return; }
+  if (/^(thank|thanks|shukriya)/i.test(lower)) { respond('You’re welcome. I’m glad I could help.'); return; }
+  respond(`I hear you. I’m a browser-based assistant and don’t have a connected generative AI service yet, but I can search the web, research public encyclopedia summaries, open websites, draft messages, and save reminders. Try “Search ${text.slice(0, 50)}”.`, { links: [{ label: `Search the web ↗`, href: `https://www.google.com/search?q=${encodeURIComponent(text)}` }] });
 }
-
-function setupSpeechRecognition() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    micButton.title = 'Speech recognition not supported in this browser.';
-    return;
-  }
-
-  recognition = new SpeechRecognition();
-  recognition.lang = 'en-US';
-  recognition.continuous = false;
-  recognition.interimResults = false;
-
-  recognition.onstart = () => {
-    recognitionActive = true;
-    micButton.classList.add('listening');
-    setStatus('Listening...', true);
-  };
-
-  recognition.onend = () => {
-    recognitionActive = false;
-    micButton.classList.remove('listening');
-    setStatus('Ready');
-  };
-
-  recognition.onerror = (event) => {
-    console.error('Speech recognition error', event.error);
-    setStatus('Ready');
-    addMessage(`Voice recognition error: ${event.error}. Please type your command instead.`, 'bot');
-  };
-
-  recognition.onresult = async (event) => {
-    const transcript = event.results[0][0].transcript;
-    commandInput.value = transcript;
-    await handleCommand(transcript);
-  };
-}
-
-micButton.addEventListener('click', () => {
-  if (!recognition) {
-    setupSpeechRecognition();
-  }
-
-  if (recognitionActive) {
-    recognition.stop();
-    return;
-  }
-
-  recognition.start();
-});
-
-runCommandBtn.addEventListener('click', runCommandFromInput);
-commandInput.addEventListener('keydown', async (event) => {
-  if (event.key === 'Enter') {
-    await runCommandFromInput();
-  }
-});
-
-speakBtn.addEventListener('click', () => {
-  if (lastSpokenText) {
-    speakText(lastSpokenText);
-  } else {
-    speakText('I am Zythar AI, ready to help you.');
-  }
-});
-
-document.querySelectorAll('.action-btn').forEach((button) => {
-  button.addEventListener('click', async () => {
-    const command = button.dataset.command;
-    commandInput.value = command;
-    await handleCommand(command);
-  });
-});
-
-setupSpeechRecognition();
-setStatus('Ready');
+function sendCommand() { const text = input.value.trim(); if (!text) return; input.value = ''; input.style.height = 'auto'; addUser(text); parseCommand(text); }
+function renderReminders() { $('#reminderCount').textContent = reminders.length; const list = $('#reminderList'); list.replaceChildren(); if (!reminders.length) { const empty = document.createElement('p'); empty.className = 'welcome-copy'; empty.textContent = 'No reminders yet. Add one below, or tell Zythar “Remind me to take a break”.'; list.append(empty); return; } reminders.forEach(item => { const row = document.createElement('div'); row.className = 'reminder-item'; const icon = document.createElement('span'); icon.textContent = '◷'; const content = document.createElement('p'); content.textContent = item.text; const date = document.createElement('small'); date.textContent = new Date(item.created).toLocaleString(); content.append(date); const del = document.createElement('button'); del.className = 'delete-reminder'; del.setAttribute('aria-label', 'Delete reminder'); del.textContent = '×'; del.addEventListener('click', () => { reminders = reminders.filter(reminder => reminder.id !== item.id); localStorage.setItem(STORAGE.reminders, JSON.stringify(reminders)); renderReminders(); }); row.append(icon, content, del); list.append(row); }); }
+function setView(view) { const isReminders = view === 'reminders'; $('#chatView').hidden = isReminders; $('#remindersView').hidden = !isReminders; $('#pageTitle').textContent = isReminders ? 'My reminders' : 'Your assistant'; document.querySelectorAll('.nav-item').forEach(button => button.classList.toggle('active', button.dataset.view === view)); $('#sidebar').classList.remove('open'); }
+function setupRecognition() { const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SpeechRecognition) { $('#connectionStatus').textContent = 'Voice input unsupported here — typing still works'; $('#micButton').title = 'Voice input is not supported in this browser'; $('#micButton').addEventListener('click', () => showToast('Try Chrome or Edge for voice input; typing works everywhere.')); return; } recognition = new SpeechRecognition(); recognition.lang = langSelect.value; recognition.continuous = false; recognition.interimResults = true; recognition.onstart = () => { listening = true; $('#micButton').classList.add('listening'); $('#micButton').setAttribute('aria-label', 'Stop voice input'); }; recognition.onend = () => { listening = false; $('#micButton').classList.remove('listening'); $('#micButton').setAttribute('aria-label', 'Start voice input'); }; recognition.onerror = event => { if (event.error !== 'no-speech' && event.error !== 'aborted') showToast(event.error === 'not-allowed' ? 'Please allow microphone access in your browser.' : 'Voice input stopped. You can type instead.'); }; recognition.onresult = event => { let transcript = ''; for (let i = event.resultIndex; i < event.results.length; i++) transcript += event.results[i][0].transcript; input.value = transcript; input.style.height = 'auto'; input.style.height = `${Math.min(input.scrollHeight, 150)}px`; if (event.results[event.results.length - 1].isFinal) sendCommand(); }; }
+$('#sendButton').addEventListener('click', sendCommand);
+input.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendCommand(); } });
+input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = `${Math.min(input.scrollHeight, 150)}px`; });
+$('#micButton').addEventListener('click', () => { if (!recognition) return; try { listening ? recognition.stop() : recognition.start(); } catch { showToast('Voice input is already active.'); } });
+langSelect.value = localStorage.getItem(STORAGE.language) || 'en-US'; langSelect.addEventListener('change', () => { localStorage.setItem(STORAGE.language, langSelect.value); if (recognition) recognition.lang = langSelect.value; showToast('Voice language updated.'); });
+document.querySelectorAll('.suggestion').forEach(button => button.addEventListener('click', () => { input.value = button.dataset.command; sendCommand(); }));
+document.querySelectorAll('.nav-item').forEach(button => button.addEventListener('click', () => setView(button.dataset.view)));
+$('#newChatBtn').addEventListener('click', () => { conversation = []; saveChat(); renderConversation(); setView('chat'); input.focus(); });
+$('#reminderForm').addEventListener('submit', event => { event.preventDefault(); const text = $('#reminderInput').value.trim(); if (!text) return; addReminder(text); $('#reminderInput').value = ''; showToast('Reminder saved on this device.'); });
+$('#themeBtn').addEventListener('click', () => { document.body.classList.toggle('light'); localStorage.setItem(STORAGE.theme, document.body.classList.contains('light') ? 'light' : 'dark'); });
+if (localStorage.getItem(STORAGE.theme) === 'light') document.body.classList.add('light');
+$('#clearDataBtn').addEventListener('click', () => { if (!confirm('Delete your saved chat and reminders from this browser? This cannot be undone.')) return; localStorage.removeItem(STORAGE.chat); localStorage.removeItem(STORAGE.reminders); conversation = []; reminders = []; renderConversation(); renderReminders(); showToast('Your local data has been cleared.'); });
+$('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
+window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); deferredInstall = event; $('#installBtn').hidden = false; });
+$('#installBtn').addEventListener('click', async () => { if (!deferredInstall) return; deferredInstall.prompt(); await deferredInstall.userChoice; deferredInstall = null; $('#installBtn').hidden = true; });
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+setupRecognition(); renderConversation(); renderReminders();

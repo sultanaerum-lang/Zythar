@@ -1,35 +1,25 @@
 # Zythar AI
 
-Zythar AI is a responsive voice assistant website designed to work on mobile and desktop.
+**Your voice, your companion.** Zythar is a responsive, installable web app (PWA) for Android and desktop browsers.
 
-## Features
-- Voice recognition and speech output
-- Website and app launching through voice commands
-- Web search and smart research summaries
-- Message drafting and WhatsApp message links
-- Emotional support and friendly guidance
-- Quick action buttons for demo commands
-
-## Run locally
-Open `index.html` directly in a browser, or serve the project using a local web server:
+## Use it
+Open the deployed site over HTTPS, or run locally with a static server:
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Then visit:
+Then visit `http://localhost:8000`.
 
-```text
-http://localhost:8000
-```
+## Included
+- Responsive assistant interface and installable PWA shell, with basic offline caching.
+- Optional browser speech recognition (where supported), speech playback, and English/Urdu/Hindi recognition language choices.
+- Web search links, popular website shortcuts, Wikipedia topic summaries with source links, and search fallbacks.
+- WhatsApp message drafts open for the user to review; Zythar does not send messages.
+- Browser-local chat history and reminders, plus a clear-data control and light/dark theme.
+- Supportive conversation responses and an urgent-safety response for self-harm language.
 
-## Demo commands
-- Open YouTube
-- Search AI trends
-- Research climate change
-- Send message hello team
-- I feel stressed today
-- How are you today
+## Important limitations
+This is a static front-end; it does not yet connect to a generative AI model or server. General chat therefore explains its available actions and offers web search rather than pretending to provide AI-generated answers. There is no account sync, background reminder notification, direct app control, or automatic sending. A website cannot open arbitrary installed apps or run when closed; those functions require platform permissions or a separately configured backend/native integration. Speech recognition availability, microphone permission, and install options depend on browser and HTTPS support. Research summaries use Wikipedia's public API and may not cover breaking news.
 
-## Notes
-Voice command support depends on browser support for speech recognition and permissions.
+The chat and reminders are stored in the browser's local storage on this device. Avoid entering sensitive personal information on a shared device. Use the clear-data control to remove local history.

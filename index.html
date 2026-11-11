@@ -1,140 +1,77 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="Zythar AI is an advanced voice-controlled assistant for searches, research, websites, message drafting, and daily guidance."
-    />
-    <title>Zythar AI</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <div class="bg-glow glow-1"></div>
-    <div class="bg-glow glow-2"></div>
-
-    <header class="topbar">
-      <div class="brand-wrap">
-        <div class="brand-mark">Z</div>
-        <div>
-          <p class="eyebrow">Voice AI</p>
-          <h1>Zythar AI</h1>
-        </div>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10131c">
+  <meta name="description" content="Zythar — your voice-first AI companion for search, research, notes, and everyday help.">
+  <title>Zythar — Your voice, your companion</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-frame">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#home" aria-label="Zythar home"><span class="brand-icon">z</span><span>Zythar<span class="brand-dot">.</span><small>VOICE COMPANION</small></span></a>
+      <button class="new-chat" id="newChatBtn"><span>＋</span> New conversation</button>
+      <p class="side-label">YOUR SPACE</p>
+      <button class="nav-item active" data-view="chat"><span>◉</span> Assistant</button>
+      <button class="nav-item" data-view="reminders"><span>◷</span> My reminders <b id="reminderCount">0</b></button>
+      <div class="sidebar-bottom">
+        <div class="privacy-note"><span class="privacy-dot"></span><div><strong>Your privacy matters</strong><small>Chat stays in this browser</small></div></div>
+        <button id="clearDataBtn" class="text-button">Clear my local data</button>
+        <div class="profile"><div class="profile-avatar">Z</div><div><strong>Zythar AI</strong><small>Ready when you are</small></div><span class="online-dot"></span></div>
       </div>
+    </aside>
 
-      <div class="status-pill" id="statusPill">
-        <span class="pulse"></span>
-        Ready
-      </div>
-    </header>
+    <main class="main" id="home">
+      <header class="topbar">
+        <button class="mobile-brand" id="menuBtn" aria-label="Toggle navigation">☰ <strong>Zythar</strong></button>
+        <div class="page-title"><span class="green-dot"></span><span id="pageTitle">Your assistant</span></div>
+        <div class="top-actions">
+          <label class="language-picker" for="languageSelect"><span>文</span><select id="languageSelect" aria-label="Voice language"><option value="en-US">English</option><option value="ur-PK">اردو</option><option value="hi-IN">हिन्दी</option></select></label>
+          <button class="icon-button" id="installBtn" hidden title="Install Zythar">⇩</button>
+          <button class="icon-button" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">☼</button>
+        </div>
+      </header>
 
-    <main class="app-shell">
-      <aside class="sidebar">
-        <div class="panel">
-          <p class="panel-title">Quick actions</p>
-          <div class="quick-actions">
-            <button class="action-btn" data-command="search for latest AI trends">
-              Search AI
-            </button>
-            <button class="action-btn" data-command="research the benefits of healthy sleep">
-              Research topic
-            </button>
-            <button class="action-btn" data-command="open youtube">
-              Open YouTube
-            </button>
-            <button class="action-btn" data-command="open whatsapp">
-              Open WhatsApp
-            </button>
-            <button class="action-btn" data-command="message hello team i am on my way">
-              Draft message
-            </button>
-            <button class="action-btn" data-command="how are you today">
-              Check in
-            </button>
+      <section class="workspace" id="chatView">
+        <div class="welcome" id="welcome">
+          <div class="sparkle">✳</div>
+          <p class="kicker">A LITTLE HELP, A LOT OF HEART</p>
+          <h1>What’s on your<br><span>mind today?</span></h1>
+          <p class="welcome-copy">Talk it out, look it up, or just tell me how you’re feeling.<br>I’m here to help you take the next step.</p>
+          <div class="suggestions">
+            <button class="suggestion" data-command="Research the benefits of walking"><span class="suggestion-icon violet">✧</span><span><strong>Explore a topic</strong><small>Research with useful sources</small></span><span class="arrow">↗</span></button>
+            <button class="suggestion" data-command="Search for easy dinner ideas"><span class="suggestion-icon peach">⌕</span><span><strong>Find something</strong><small>Search the web by voice or text</small></span><span class="arrow">↗</span></button>
+            <button class="suggestion" data-command="I feel a little overwhelmed today"><span class="suggestion-icon mint">♡</span><span><strong>Talk it through</strong><small>A calm space to share</small></span><span class="arrow">↗</span></button>
+            <button class="suggestion" data-command="Remind me to drink water"><span class="suggestion-icon blue">◷</span><span><strong>Save a reminder</strong><small>Keep a note for later</small></span><span class="arrow">↗</span></button>
           </div>
         </div>
 
-        <div class="panel">
-          <p class="panel-title">Voice commands</p>
-          <ul class="command-list">
-            <li>“Open YouTube”</li>
-            <li>“Search AI tools”</li>
-            <li>“Research climate change”</li>
-            <li>“Send message hello team”</li>
-            <li>“I feel stressed today”</li>
-            <li>“Tell me about productivity”</li>
-          </ul>
-        </div>
-      </aside>
-
-      <section class="main-panel">
-        <div class="assistant-card">
-          <div class="assistant-header">
-            <div class="assistant-avatar">Z</div>
-            <div>
-              <p class="eyebrow">Assistant</p>
-              <h2>Zythar</h2>
-            </div>
+        <div class="chat-log" id="chatLog" aria-live="polite" aria-label="Conversation"></div>
+        <div class="composer-wrap">
+          <div class="composer" id="composer">
+            <textarea id="commandInput" rows="1" placeholder="Ask anything, or tell me what’s on your mind…" aria-label="Message Zythar"></textarea>
+            <div class="composer-tools"><span class="composer-hint"><kbd>↵</kbd> to send</span><div class="composer-actions"><button class="mic-button" id="micButton" aria-label="Start voice input" title="Speak to Zythar">♩</button><button class="send-button" id="sendButton" aria-label="Send message">↑</button></div></div>
           </div>
-
-          <div id="chatLog" class="chat-log" aria-live="polite">
-            <div class="message bot-message">
-              <span class="role">Zythar</span>
-              <p>
-                Salaam! I am ready. Say “Open YouTube”, “Search AI tools”, “Research climate change”,
-                or “Send message hello team”.
-              </p>
-            </div>
-          </div>
-
-          <div class="controls-row">
-            <input
-              id="commandInput"
-              type="text"
-              placeholder="Type or speak your command..."
-              aria-label="Command input"
-            />
-            <button id="micButton" class="mic-btn" aria-label="Start voice command">
-              <span class="mic-icon">🎙️</span>
-            </button>
-          </div>
-
-          <div class="action-row">
-            <button id="runCommandBtn" class="primary-btn">Run command</button>
-            <button id="speakBtn" class="ghost-btn">Speak reply</button>
-          </div>
-        </div>
-
-        <div class="info-grid">
-          <div class="info-card highlight">
-            <p class="card-label">Features</p>
-            <h3>Advanced voice assistant</h3>
-            <ul>
-              <li>Website and app launching</li>
-              <li>Voice-driven search and research</li>
-              <li>Message drafting and WhatsApp support</li>
-              <li>Supportive guidance for feelings</li>
-            </ul>
-          </div>
-
-          <div class="info-card">
-            <p class="card-label">Research</p>
-            <h3>Real-time knowledge</h3>
-            <div id="researchBox" class="research-box">
-              Ask me to research a topic and I will fetch a brief summary using public sources.
-            </div>
-          </div>
+          <p class="disclaimer">Zythar can make mistakes. Check important information with trusted sources.</p>
         </div>
       </section>
-    </main>
 
-    <script src="script.js"></script>
-  </body>
+      <section class="workspace reminders-view" id="remindersView" hidden>
+        <div class="reminders-heading"><p class="kicker">YOUR SPACE</p><h1>A little note<br><span>for later.</span></h1><p class="welcome-copy">Reminders are saved only in this browser on this device.</p></div>
+        <div class="reminder-list" id="reminderList"></div>
+        <form class="reminder-form" id="reminderForm"><input id="reminderInput" maxlength="180" placeholder="Add a reminder…" aria-label="New reminder"><button type="submit">Add reminder <span>＋</span></button></form>
+      </section>
+      <footer class="footer"><span>Made for your everyday moments <span class="heart">♥</span></span><span id="connectionStatus">Voice available in supported browsers</span></footer>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="script.js" defer></script>
+</body>
 </html>
