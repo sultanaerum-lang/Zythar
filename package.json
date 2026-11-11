@@ -4,6 +4,10 @@
   "private": true,
   "description": "Zythar voice companion web app with a server-side AI chat endpoint",
   "engines": { "node": ">=18" },
-  "scripts": { "dev": "vercel dev", "deploy": "vercel --prod" },
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod",
+    "test": "node --test"
+  },
   "devDependencies": { "vercel": "^39.0.0" }
 }
